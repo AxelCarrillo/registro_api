@@ -9,7 +9,7 @@ card_value = 0.0
 
 # Modelo de datos para el valor de la tarjeta en el POST
 class CardValueInput(BaseModel):
-    value: float
+    value: str
 
 # Agregar el middleware CORS para permitir el acceso desde cualquier origen
 app.add_middleware(
