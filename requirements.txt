@@ -1,4 +1,8 @@
-fastapi==0.68.0
-uvicorn==0.15.0
-mysql-connector-python==8.0.28
-gunicorn
+annotated-types==0.6.0
+click==8.1.7
+fastapi==0.110.1
+mysql-connector-python==8.3.0
+pydantic==2.7.0
+pydantic_core==2.18.1
+starlette==0.37.2
+uvicorn==0.29.0
