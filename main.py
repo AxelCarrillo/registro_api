@@ -44,7 +44,7 @@ async def update_card_value(card_input: CardValueInput):
 @app.get("/read-card-value/")
 async def read_card_value():
     global card_value
-    query = "SELECT * FROM equipos WHERE rfid = %s"
+    query = "SELECT * FROM equipo WHERE rfid = %s"
     cursor.execute(query, (card_value,))
     equipo = cursor.fetchone()
     if not equipo:
