@@ -1,8 +1,21 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+import mysql.connector
 
 app = FastAPI()
+
+# Configurar el acceso a la base de datos MySQL
+MYSQL_CONFIG = {
+    'host': 'bmsrtwle6xkliwejunsm-mysql.services.clever-cloud.com',
+    'user': 'uezjewljo9absf77',
+    'password': 'te2uJ43DuizIrhOIehoA',
+    'database': 'bmsrtwle6xkliwejunsm'
+}
+
+# Conectar a la base de datos
+conn = mysql.connector.connect(**MYSQL_CONFIG)
+cursor = conn.cursor(dictionary=True)
 
 # Variable global para almacenar el valor de la tarjeta
 card_value = 0.0
@@ -27,8 +40,13 @@ async def update_card_value(card_input: CardValueInput):
     card_value = card_input.value
     return {"message": "Card value updated successfully"}
 
-# Endpoint para leer el valor de la tarjeta
+# Endpoint para leer el valor de la tarjeta y obtener datos de la base de datos según el valor RFID
 @app.get("/read-card-value/")
 async def read_card_value():
     global card_value
-    return {"value": card_value}
+    query = "SELECT * FROM equipo WHERE rfid = %s"
+    cursor.execute(query, (card_value,))
+    equipo = cursor.fetchone()
+    if not equipo:
+        raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    return equipo
