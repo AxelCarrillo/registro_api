@@ -1,8 +1,3 @@
-from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-import mysql.connector
-
 app = FastAPI()
 
 # Configurar el acceso a la base de datos MySQL
@@ -13,24 +8,12 @@ MYSQL_CONFIG = {
     'database': 'bmsrtwle6xkliwejunsm'
 }
 
-# Conectar a la base de datos
-conn = mysql.connector.connect(**MYSQL_CONFIG)
-cursor = conn.cursor(dictionary=True)
+# Variable global para almacenar el valor de la tarjeta
+card_value = 0.0
 
 # Modelo de datos para el valor de la tarjeta en el POST
 class CardValueInput(BaseModel):
     value: str
-
-# Función para obtener el valor más reciente de la tarjeta RFID desde la base de datos
-def get_latest_card_value():
-    # Realiza una consulta a la base de datos para obtener el valor más reciente de la tarjeta RFID
-    query = "SELECT value FROM card_values ORDER BY id DESC LIMIT 1"
-    cursor.execute(query)
-    result = cursor.fetchone()
-    if result:
-        return result["value"]
-    else:
-        return None
 
 # Agregar el middleware CORS para permitir el acceso desde cualquier origen
 app.add_middleware(
@@ -44,30 +27,21 @@ app.add_middleware(
 # Endpoint para actualizar el valor de la tarjeta
 @app.post("/update-card-value/")
 async def update_card_value(card_input: CardValueInput):
-    # Actualizar el valor de la tarjeta global
     global card_value
     card_value = card_input.value
-    
-    # Aquí puedes realizar cualquier otra lógica de actualización necesaria en la base de datos
-    # Por ejemplo, podrías actualizar la base de datos con el nuevo valor de la tarjeta
-    
-    # Luego, devolver un mensaje de confirmación
     return {"message": "Card value updated successfully"}
 
 # Endpoint para leer el valor de la tarjeta y obtener datos de la base de datos según el valor RFID
 @app.get("/read-card-value/")
 async def read_card_value():
-    # Obtener el valor de la tarjeta RFID
-    card_value = get_latest_card_value()  # Obtener el último valor de la tarjeta
-    
-    # Consultar la base de datos para obtener los datos del equipo asociados con el valor de la tarjeta
+    global card_value
+    conn = mysql.connector.connect(**MYSQL_CONFIG)
+    cursor = conn.cursor(dictionary=True)
     query = "SELECT * FROM equipo WHERE rfid = %s"
     cursor.execute(query, (card_value,))
     equipo = cursor.fetchone()
-    
-    # Manejar el caso donde no se encuentra ningún equipo con la tarjeta RFID proporcionada
+    cursor.close()  # Cierra el cursor después de leer los resultados de la consulta
+    conn.close()  # Cierra la conexión después de usarla
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
-    
-    # Devolver los datos del equipo
     return equipo
