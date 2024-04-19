@@ -21,6 +21,17 @@ cursor = conn.cursor(dictionary=True)
 class CardValueInput(BaseModel):
     value: str
 
+# Función para obtener el valor más reciente de la tarjeta RFID desde la base de datos
+def get_latest_card_value():
+    # Realiza una consulta a la base de datos para obtener el valor más reciente de la tarjeta RFID
+    query = "SELECT value FROM card_values ORDER BY id DESC LIMIT 1"
+    cursor.execute(query)
+    result = cursor.fetchone()
+    if result:
+        return result["value"]
+    else:
+        return None
+
 # Agregar el middleware CORS para permitir el acceso desde cualquier origen
 app.add_middleware(
     CORSMiddleware,
@@ -47,7 +58,7 @@ async def update_card_value(card_input: CardValueInput):
 @app.get("/read-card-value/")
 async def read_card_value():
     # Obtener el valor de la tarjeta RFID
-    card_value = get_latest_card_value()  # Suponiendo que tienes una función para obtener el último valor de la tarjeta
+    card_value = get_latest_card_value()  # Obtener el último valor de la tarjeta
     
     # Consultar la base de datos para obtener los datos del equipo asociados con el valor de la tarjeta
     query = "SELECT * FROM equipo WHERE rfid = %s"
