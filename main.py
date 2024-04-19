@@ -1,3 +1,8 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import mysql.connector
+
 app = FastAPI()
 
 # Configurar el acceso a la base de datos MySQL
