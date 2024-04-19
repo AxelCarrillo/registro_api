@@ -49,4 +49,5 @@ async def read_card_value():
     equipo = cursor.fetchone()
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
+    cursor.close()  # Cierra el cursor después de leer los resultados de la consulta
     return equipo
