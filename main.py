@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import mysql.connector
+from datetime import datetime
 
 app = FastAPI()
 
@@ -14,7 +15,7 @@ MYSQL_CONFIG = {
 }
 
 # Variable global para almacenar el valor de la tarjeta
-card_value = 0.0
+card_value = None
 
 # Modelo de datos para el valor de la tarjeta en el POST
 class CardValueInput(BaseModel):
@@ -40,6 +41,9 @@ async def update_card_value(card_input: CardValueInput):
 @app.get("/read-card-value/")
 async def read_card_value():
     global card_value
+    if card_value is None:
+        raise HTTPException(status_code=400, detail="No se ha leído ningún valor de tarjeta RFID")
+    
     conn = mysql.connector.connect(**MYSQL_CONFIG)
     cursor = conn.cursor(dictionary=True)
     query = "SELECT * FROM equipo WHERE rfid = %s"
@@ -50,3 +54,33 @@ async def read_card_value():
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
     return equipo
+
+# Endpoint para registrar la hora y fecha del ingreso utilizando el código RFID
+@app.post("/register-entry/")
+async def register_entry():
+    global card_value
+    if card_value is None:
+        raise HTTPException(status_code=400, detail="No se ha leído ningún valor de tarjeta RFID")
+    
+    conn = mysql.connector.connect(**MYSQL_CONFIG)
+    cursor = conn.cursor()
+    try:
+        # Busca el equipo correspondiente al código RFID
+        query_equipo = "SELECT id_equipo FROM equipo WHERE rfid = %s"
+        cursor.execute(query_equipo, (card_value,))
+        equipo_id = cursor.fetchone()
+        if not equipo_id:
+            raise HTTPException(status_code=404, detail="Equipo no encontrado para el código RFID proporcionado")
+
+        # Registra la hora y fecha del ingreso en la tabla registros_rfid
+        timestamp = datetime.now()
+        query_registro = "INSERT INTO registros_rfid (id_equipo, timestamp) VALUES (%s, %s)"
+        cursor.execute(query_registro, (equipo_id[0], timestamp))
+        conn.commit()
+        return {"message": "Hora y fecha de ingreso registradas correctamente"}
+    except Exception as e:
+        conn.rollback()  # Revierte la transacción en caso de error
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
