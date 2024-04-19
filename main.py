@@ -73,9 +73,9 @@ async def register_entry():
             raise HTTPException(status_code=404, detail="Equipo no encontrado para el código RFID proporcionado")
 
         # Registra la hora y fecha del ingreso en la tabla registros_rfid
-        timestamp = datetime.now()
-        query_registro = "INSERT INTO registros_rfid (id_equipo, timestamp) VALUES (%s, %s)"
-        cursor.execute(query_registro, (equipo_id[0], timestamp))
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')  # Formatea la marca de tiempo
+        query_registro = "INSERT INTO registros_rfid (rfid_equipo, timestamp, id_equipo) VALUES (%s, %s, %s)"
+        cursor.execute(query_registro, (card_value, timestamp, equipo_id[0]))
         conn.commit()
         return {"message": "Hora y fecha de ingreso registradas correctamente"}
     except Exception as e:
