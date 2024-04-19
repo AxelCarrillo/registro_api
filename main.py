@@ -14,6 +14,9 @@ MYSQL_CONFIG = {
     'database': 'bmsrtwle6xkliwejunsm'
 }
 
+# Variable global para almacenar el valor de la tarjeta
+card_value = None
+
 # Modelo de datos para el valor de la tarjeta en el POST
 class CardValueInput(BaseModel):
     value: str
@@ -30,12 +33,14 @@ app.add_middleware(
 # Endpoint para actualizar el valor de la tarjeta
 @app.post("/update-card-value/")
 async def update_card_value(card_input: CardValueInput):
-    print("Actualizando valor de la tarjeta RFID:", card_input.value)
+    global card_value
+    card_value = card_input.value
     return {"message": "Card value updated successfully"}
 
 # Endpoint para leer el valor de la tarjeta y obtener datos de la base de datos según el valor RFID
 @app.get("/read-card-value/")
 async def read_card_value():
+    global card_value
     print("Leyendo valor de la tarjeta RFID:", card_value)
     if card_value is None:
         raise HTTPException(status_code=400, detail="No se ha leído ningún valor de tarjeta RFID")
@@ -54,6 +59,7 @@ async def read_card_value():
 # Endpoint para registrar la hora y fecha del ingreso utilizando el código RFID
 @app.post("/register-entry/")
 async def register_entry():
+    global card_value
     print("Registrando entrada con valor de tarjeta RFID:", card_value)
     if card_value is None:
         raise HTTPException(status_code=400, detail="No se ha leído ningún valor de tarjeta RFID")
