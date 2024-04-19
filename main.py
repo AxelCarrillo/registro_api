@@ -13,10 +13,6 @@ MYSQL_CONFIG = {
     'database': 'bmsrtwle6xkliwejunsm'
 }
 
-# Conectar a la base de datos
-conn = mysql.connector.connect(**MYSQL_CONFIG)
-cursor = conn.cursor(dictionary=True)
-
 # Variable global para almacenar el valor de la tarjeta
 card_value = 0.0
 
@@ -44,10 +40,13 @@ async def update_card_value(card_input: CardValueInput):
 @app.get("/read-card-value/")
 async def read_card_value():
     global card_value
+    conn = mysql.connector.connect(**MYSQL_CONFIG)
+    cursor = conn.cursor(dictionary=True)
     query = "SELECT * FROM equipo WHERE rfid = %s"
     cursor.execute(query, (card_value,))
     equipo = cursor.fetchone()
+    cursor.close()  # Cierra el cursor después de leer los resultados de la consulta
+    conn.close()  # Cierra la conexión después de usarla
     if not equipo:
         raise HTTPException(status_code=404, detail="Equipo no encontrado")
-    cursor.close()  # Cierra el cursor después de leer los resultados de la consulta
     return equipo
